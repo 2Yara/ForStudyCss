@@ -1,0 +1,40 @@
+using System;
+using System.IO;
+using System.Text.RegularExpressions;
+
+class Program {
+    static void Main() {
+        Console.Write("Введите путь к файлу: ");
+        string filePath = Console.ReadLine();
+        
+        try {
+            string text = File.ReadAllText(filePath);
+            
+            List<string> quotes = ExtractQuotes(text);
+            
+            Console.WriteLine("Цитаты из текста: \n");
+            if (quotes.Count > 0) {
+                for (int i = 0; i < quotes.Count; i++) {
+                    Console.WriteLine($"{i + 1}. {quotes[i]}");
+                }
+            }
+            else {
+                Console.WriteLine("Цитаты не найдены.");
+            }
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+    
+    static List<string> ExtractQuotes(string text) {
+        List<string> quotes = new List<string>();
+        string pattern = @"""(\\""|[^""])*"""; // Регулярное выражение для поиска текста в кавычках
+        
+        MatchCollection matches = Regex.Matches(text, pattern);
+        foreach (Match match in matches) {
+            quotes.Add(match.Value);
+        }
+        return quotes;
+    }
+}
