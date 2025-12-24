@@ -1,0 +1,49 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+class Program {
+    static void Main() {
+        Console.Write("Введите путь к файлу: ");
+        string filePath = Console.ReadLine();
+        
+        try {
+            string text = File.ReadAllText(filePath);
+            
+            List<string> sentences = SplitIntoSentences(text);
+            
+            Console.WriteLine("\nПредложения без запятых:\n");
+            bool found = true;
+            foreach (string sentence in sentences) {
+                string trimmed = sentence.Trim();
+                if (trimmed.Length > 0 && !ContainsComma(trimmed)) {
+                    Console.WriteLine($"  {trimmed}");
+                    found = false;
+                }
+            }
+            
+            if (found) {
+                Console.WriteLine("Все предложения содержат запятые.");
+            }
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+    
+    static List<string> SplitIntoSentences(string text) {
+        List<string> sentences = new List<string>();
+        string pattern = @"([^.!?]+[.!?]+)";
+        
+        MatchCollection matches = Regex.Matches(text, pattern);
+        foreach (Match match in matches) {
+            sentences.Add(match.Value);
+        }
+        return sentences;
+    }
+    
+    static bool ContainsComma(string text) {
+        return text.Contains(",");
+    }
+}
