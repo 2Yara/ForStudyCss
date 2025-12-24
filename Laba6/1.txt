@@ -1,0 +1,125 @@
+using System;
+
+class Program {
+    static void Main() {
+        int rows = 0;
+        while (rows <= 0) {
+            Console.Write("Введите количество строк в ступенчатом массиве: ");
+            if (!int.TryParse(Console.ReadLine(), out rows) || rows <= 0) {
+                Console.WriteLine("Ошибка, введите положительное целое число");
+            }
+        }
+
+
+        int[][] jaggedArray = new int[rows][];
+        for (int i = 0; i < rows; i++) {
+            Console.WriteLine($"Строка {i + 1}, сколько элементов?");
+            
+            int cols = 0;
+            while (cols <= 0) {
+                if (!int.TryParse(Console.ReadLine(), out cols) || cols <= 0) {
+                    Console.WriteLine("Ошибка, введите положительное целое число");
+                }
+            }
+
+
+            jaggedArray[i] = new int[cols];
+            Console.WriteLine($"Ввод {cols} целых чисел для строки {i + 1}:");
+            for (int j = 0; j < cols; j++) {
+                bool isValid = true;
+                while (isValid) {
+                    if (int.TryParse(Console.ReadLine(), out int value)) {
+                        jaggedArray[i][j] = value;
+                        isValid = false;
+                    }
+                    else {
+                        Console.WriteLine("Ошибка, введите целое число");
+                    }
+                }
+            }
+        }
+
+        //Вывод полученного массива
+        PrintJaggedArray(jaggedArray);
+
+        int rowsWithZero = CountRowsWithZero(jaggedArray);
+        Console.WriteLine($"\nСтроки с нулевыми элементами: {rowsWithZero}");
+
+
+        int rowWithLongestSeries = FindRowWithLongestSeries(jaggedArray);
+        if (rowWithLongestSeries != -1) {
+            Console.WriteLine($"Строка с самой длинной серией повторяющихся элементов: {rowWithLongestSeries + 1}");
+        }
+        else {
+            Console.WriteLine("В массиве нет серий одинаковых элементов");
+        }
+
+    }
+
+
+    static int CountRowsWithZero(int[][] array) {
+        int count = 0;
+        
+        for (int i = 0; i < array.Length; i++) {
+            bool hasZero = false;
+            for (int j = 0; j < array[i].Length; j++) {
+                if (array[i][j] == 0) {
+                    hasZero = true;
+                    break;
+                }
+            }
+            if (hasZero) count++;
+        }
+        
+        return count;
+    }
+
+    static int FindRowWithLongestSeries(int[][] array) {
+        int maxSeriesLength = 0;
+        int rowWithMaxSeries = -1;
+        
+        for (int i = 0; i < array.Length; i++) {
+            int currentSeriesLength = 0;
+            int maxSeriesInRow = 0;
+            
+            if (array[i].Length == 0)
+                continue;
+                
+            currentSeriesLength = 1; 
+            
+            for (int j = 1; j < array[i].Length; j++) {
+                if (array[i][j] == array[i][j - 1]) {
+                    currentSeriesLength++;
+                }
+                else {
+                    if (currentSeriesLength > maxSeriesInRow) {
+                        maxSeriesInRow = currentSeriesLength;
+                    }
+                    currentSeriesLength = 1;
+                }
+            }
+            
+            if (currentSeriesLength > maxSeriesInRow) {
+                maxSeriesInRow = currentSeriesLength;
+            }
+            
+            if (maxSeriesInRow > maxSeriesLength && maxSeriesInRow > 1) {
+                maxSeriesLength = maxSeriesInRow;
+                rowWithMaxSeries = i;
+            }
+        }
+        
+        return rowWithMaxSeries;
+    }
+
+    static void PrintJaggedArray(int[][] array) {
+        for (int i = 0; i < array.Length; i++) {
+            for (int j = 0; j < array[i].Length; j++) {
+                Console.Write(array[i][j]);
+                if (j < array[i].Length - 1) Console.Write(", ");
+            }
+            Console.WriteLine("\n");
+        }
+    }
+
+}
