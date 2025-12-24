@@ -1,0 +1,454 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+public class Student : IComparable<Student>, ICloneable {
+    private string _lastName;
+    private string _firstName;
+    private DateTime _birthDate;
+    private string _studentId;
+    
+    public Student() {
+        _lastName = "Неизвестно";
+        _firstName = "Неизвестно";
+        _birthDate = DateTime.Now;
+        _studentId = "000000";
+    }
+    
+    public Student(string lastName, string firstName, DateTime birthDate, string studentId) {
+        LastName = lastName;
+        FirstName = firstName;
+        BirthDate = birthDate;
+        StudentId = studentId;
+    }
+    
+    public string LastName {
+        get { return _lastName; }
+        set {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Фамилия не может быть пустой");
+            _lastName = value.Trim();
+        }
+    }
+    
+    public string FirstName {
+        get { return _firstName; }
+        set {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Имя не может быть пустым");
+            _firstName = value.Trim();
+        }
+    }
+    
+    public DateTime BirthDate {
+        get { return _birthDate; }
+        set {
+            if (value > DateTime.Now)
+                throw new ArgumentException("Дата рождения не может быть в будущем");
+            if (value < DateTime.Now.AddYears(-100))
+                throw new ArgumentException("Дата рождения слишком старая");
+            _birthDate = value;
+        }
+    }
+    
+    public string StudentId {
+        get { return _studentId; }
+        set {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Номер зачетки не может быть пустым");
+            if (value.Length != 6 || !value.All(char.IsDigit))
+                throw new ArgumentException("Номер зачетки должен состоять из 6 цифр");
+            _studentId = value;
+        }
+    }
+    
+    public int Age {
+        get {
+            int age = DateTime.Now.Year - _birthDate.Year;
+            if (DateTime.Now < _birthDate.AddYears(age)) age--;
+            return age;
+        }
+    }
+    
+    // Метод для сравнения (для сортировки)
+    public int CompareTo(Student other) {
+        if (other == null) return 1;
+        
+        int lastNameCompare = string.Compare(LastName, other.LastName, StringComparison.OrdinalIgnoreCase);
+        if (lastNameCompare != 0) return lastNameCompare;
+        
+        int firstNameCompare = string.Compare(FirstName, other.FirstName, StringComparison.OrdinalIgnoreCase);
+        if (firstNameCompare != 0) return firstNameCompare;
+        
+        return BirthDate.CompareTo(other.BirthDate);
+    }
+
+    public override string ToString()
+    {
+        return $"{LastName} {FirstName}, {BirthDate:dd.MM.yyyy}, № {StudentId}, возраст: {Age}";
+    }
+
+    public object Clone() {
+        return new Student(LastName, FirstName, BirthDate, StudentId);
+    }
+    
+    // Переопределение Equals и GetHashCode
+    public override bool Equals(object obj) {
+        if (obj is Student other)
+            return StudentId == other.StudentId;
+        return false;
+    }
+    
+    public override int GetHashCode() {
+        return StudentId.GetHashCode();
+    }
+    
+    // Перегрузка операторов сравнения
+    public static bool operator ==(Student left, Student right) {
+        if (ReferenceEquals(left, null)) return ReferenceEquals(right, null);
+        return left.Equals(right);
+    }
+    
+    public static bool operator !=(Student left, Student right) {
+        return !(left == right);
+    }
+}
+
+// Класс для представления студенческой группы
+public class StudentGroup : IEnumerable<Student> {
+    // Скрытое поле - список студентов
+    private List<Student> _students;
+    private string _groupName;
+    
+    // Конструктор без параметров
+    public StudentGroup() {
+        _students = new List<Student>();
+        _groupName = "Без названия";
+    }
+    
+    // Конструктор с параметрами
+    public StudentGroup(string groupName) {
+        _students = new List<Student>();
+        GroupName = groupName;
+    }
+    
+    // Конструктор с параметрами (список студентов)
+    public StudentGroup(string groupName, IEnumerable<Student> students) {
+        _students = new List<Student>(students);
+        GroupName = groupName;
+    }
+    
+    // Свойства
+    public string GroupName {
+        get { return _groupName; }
+        set {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Название группы не может быть пустым");
+            _groupName = value.Trim();
+        }
+    }
+    
+    public int Count => _students.Count;
+    
+    public bool IsEmpty => _students.Count == 0;
+    
+    // Индексатор для доступа к студенту по номеру
+    public Student this[int index] {
+        get {
+            if (index < 0 || index >= _students.Count)
+                throw new IndexOutOfRangeException($"Индекс {index} вне диапазона [0, {_students.Count - 1}]");
+            return _students[index];
+        }
+        set {
+            if (index < 0 || index >= _students.Count)
+                throw new IndexOutOfRangeException($"Индекс {index} вне диапазона [0, {_students.Count - 1}]");
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+            _students[index] = value;
+        }
+    }
+    
+    // Метод добавления студента
+    public void AddStudent(Student student) {
+        if (student == null)
+            throw new ArgumentNullException(nameof(student));
+        
+        if (_students.Any(s => s.StudentId == student.StudentId))
+            throw new InvalidOperationException($"Студент с номером зачетки {student.StudentId} уже существует в группе");
+        
+        _students.Add(student);
+    }
+    
+    // Метод удаления студента по номеру зачетки
+    public bool RemoveStudent(string studentId) {
+        var student = _students.FirstOrDefault(s => s.StudentId == studentId);
+        if (student != null) {
+            return _students.Remove(student);
+        }
+        return false;
+    }
+    
+    // Метод удаления студента по индексу
+    public void RemoveStudentAt(int index) {
+        if (index < 0 || index >= _students.Count)
+            throw new IndexOutOfRangeException($"Индекс {index} вне диапазона [0, {_students.Count - 1}]");
+        
+        _students.RemoveAt(index);
+    }
+    
+    // Поиск по фамилии
+    public List<Student> FindByLastName(string lastName) {
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Фамилия не может быть пустой");
+        
+        return _students.Where(s => s.LastName.Equals(lastName.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+    
+    // Поиск по имени
+    public List<Student> FindByFirstName(string firstName) {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("Имя не может быть пустым");
+        
+        return _students.Where(s => s.FirstName.Equals(firstName.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+    
+    // Поиск по дате рождения
+    public List<Student> FindByBirthDate(DateTime birthDate) {
+        return _students.Where(s => s.BirthDate.Date == birthDate.Date).ToList();
+    }
+    
+    // Поиск по номеру зачетки
+    public Student FindByStudentId(string studentId) {
+        if (string.IsNullOrWhiteSpace(studentId))
+            throw new ArgumentException("Номер зачетки не может быть пустым");
+        
+        return _students.FirstOrDefault(s => s.StudentId == studentId.Trim());
+    }
+    
+    // Сортировка по фамилии
+    public void SortByLastName() {
+        _students.Sort((s1, s2) => string.Compare(s1.LastName, s2.LastName, StringComparison.OrdinalIgnoreCase));
+    }
+    
+    // Сортировка по имени
+    public void SortByFirstName() {
+        _students.Sort((s1, s2) => string.Compare(s1.FirstName, s2.FirstName, StringComparison.OrdinalIgnoreCase));
+    }
+    
+    // Сортировка по дате рождения
+    public void SortByBirthDate() {
+        _students.Sort((s1, s2) => s1.BirthDate.CompareTo(s2.BirthDate));
+    }
+    
+    // Сортировка по номеру зачетки
+    public void SortByStudentId() {
+        _students.Sort((s1, s2) => string.Compare(s1.StudentId, s2.StudentId, StringComparison.OrdinalIgnoreCase));
+    }
+    
+    // Сортировка по возрасту
+    public void SortByAge() {
+        _students.Sort((s1, s2) => s2.Age.CompareTo(s1.Age)); // По убыванию возраста
+    }
+    
+    // Метод для получения студентов старше определенного возраста
+    public List<Student> GetStudentsOlderThan(int age) {
+        if (age < 0)
+            throw new ArgumentException("Возраст не может быть отрицательным");
+        
+        return _students.Where(s => s.Age > age).ToList();
+    }
+    
+    // Метод для получения студентов младше определенного возраста
+    public List<Student> GetStudentsYoungerThan(int age) {
+        if (age < 0)
+            throw new ArgumentException("Возраст не может быть отрицательным");
+        
+        return _students.Where(s => s.Age < age).ToList();
+    }
+    
+    // Перегрузка оператора + для добавления студента
+    public static StudentGroup operator +(StudentGroup group, Student student) {
+        if (group == null) throw new ArgumentNullException(nameof(group));
+        group.AddStudent(student);
+        return group;
+    }
+    
+    // Перегрузка оператора - для удаления студента
+    public static StudentGroup operator -(StudentGroup group, Student student) {
+        if (group == null) throw new ArgumentNullException(nameof(group));
+        if (student != null)
+            group.RemoveStudent(student.StudentId);
+        return group;
+    }
+    
+    // Перегрузка оператора - для удаления по номеру зачетки
+    public static StudentGroup operator -(StudentGroup group, string studentId) {
+        if (group == null) throw new ArgumentNullException(nameof(group));
+        group.RemoveStudent(studentId);
+        return group;
+    }
+    
+    // Переопределение ToString()
+    public override string ToString() {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Группа: {GroupName}");
+        sb.AppendLine($"Количество студентов: {Count}");
+        sb.AppendLine("Студенты:");
+        
+        for (int i = 0; i < _students.Count; i++) {
+            sb.AppendLine($"{i + 1}. {_students[i]}");
+        }
+        return sb.ToString();
+    }
+    
+    // Реализация IEnumerable для использования в foreach
+    public IEnumerator<Student> GetEnumerator() {
+        return _students.GetEnumerator();
+    }
+    
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+        return GetEnumerator();
+    }
+    
+    // Метод для клонирования группы
+    public StudentGroup Clone() {
+        var clonedStudents = _students.Select(s => (Student)s.Clone()).ToList();
+        return new StudentGroup(GroupName, clonedStudents);
+    }
+}
+
+// Демонстрационная программа
+class Program {
+    static void Main() {
+        Console.WriteLine("Демонстрация работы класса 'Студенческая группа':");
+        try {
+            // Тестирование конструкторов
+            Console.WriteLine("1. ТЕСТИРОВАНИЕ КОНСТРУКТОРОВ:");
+            StudentGroup group1 = new StudentGroup();
+            Console.WriteLine($"Группа 1 (конструктор без параметров): {group1.GroupName}, студентов: {group1.Count}");
+            
+            StudentGroup group2 = new StudentGroup("ИСП-21");
+            Console.WriteLine($"Группа 2 (конструктор с именем): {group2.GroupName}, студентов: {group2.Count}");
+            
+            // Создаем тестовых студентов
+            Student student1 = new Student("Иванов", "Иван", new DateTime(2003, 5, 15), "123456");
+            Student student2 = new Student("Петров", "Петр", new DateTime(2002, 8, 22), "123457");
+            Student student3 = new Student("Сидорова", "Мария", new DateTime(2004, 1, 10), "123458");
+            Student student4 = new Student("Кузнецов", "Алексей", new DateTime(2003, 11, 30), "123459");
+            Student student5 = new Student("Смирнова", "Анна", new DateTime(2002, 12, 5), "123460");
+            
+            // Тестирование добавления студентов
+            Console.WriteLine("\n2. ТЕСТИРОВАНИЕ ДОБАВЛЕНИЯ СТУДЕНТОВ:");
+            group2.AddStudent(student1);
+            group2.AddStudent(student2);
+            group2.AddStudent(student3);
+            Console.WriteLine($"Добавлено 3 студента. Всего в группе: {group2.Count}");
+            
+            // Тестирование перегрузки оператора +
+            group2 += student4;
+            group2 += student5;
+            Console.WriteLine($"Добавлено еще 2 студента через оператор +. Всего: {group2.Count}");
+            
+            // Вывод списка студентов
+            Console.WriteLine("\nСписок студентов в группе:");
+            for (int i = 0; i < group2.Count; i++) {
+                Console.WriteLine($"{i + 1}. {group2[i]}");
+            }
+            
+            // Тестирование индексатора
+            Console.WriteLine("\n3. ТЕСТИРОВАНИЕ ИНДЕКСАТОРА:");
+            Console.WriteLine($"Студент с индексом 0: {group2[0]}");
+            Console.WriteLine($"Студент с индексом 2: {group2[2]}");
+            
+            // Тестирование поиска
+            Console.WriteLine("\n4. ТЕСТИРОВАНИЕ ПОИСКА:");
+            var ivanovs = group2.FindByLastName("Иванов");
+            Console.WriteLine($"Найдено студентов с фамилией 'Иванов': {ivanovs.Count}");
+            
+            var anna = group2.FindByFirstName("Анна");
+            Console.WriteLine($"Найдено студентов с именем 'Анна': {anna.Count}");
+            
+            var born2002 = group2.FindByBirthDate(new DateTime(2002, 8, 22));
+            Console.WriteLine($"Найдено студентов с датой рождения 22.08.2002: {born2002.Count}");
+            
+            var foundById = group2.FindByStudentId("123458");
+            Console.WriteLine($"Студент с номером зачетки '123458': {foundById?.LastName ?? "Не найден"}");
+            
+            // Тестирование сортировки
+            Console.WriteLine("\n5. ТЕСТИРОВАНИЕ СОРТИРОВКИ:");
+            Console.WriteLine("Сортировка по фамилии:");
+            group2.SortByLastName();
+            foreach (var student in group2) {
+                Console.WriteLine($"  {student.LastName} {student.FirstName}");
+            }
+            
+            Console.WriteLine("\nСортировка по возрасту (по убыванию):");
+            group2.SortByAge();
+            foreach (var student in group2) {
+                Console.WriteLine($"  {student.LastName} {student.FirstName} - {student.Age} лет");
+            }
+            
+            // Тестирование удаления
+            Console.WriteLine("\n6. ТЕСТИРОВАНИЕ УДАЛЕНИЯ:");
+            Console.WriteLine($"Студентов до удаления: {group2.Count}");
+            bool removed = group2.RemoveStudent("123459");
+            Console.WriteLine($"Удаление студента с номером '123459': {(removed ? "успешно" : "не удалось")}");
+            
+            Console.WriteLine($"Студентов после удаления: {group2.Count}");
+            
+            // Тестирование перегрузки оператора -
+            group2 -= student3;
+            Console.WriteLine($"Удаление через оператор -: {group2.Count} студентов");
+            
+            // Тестирование выборок по возрасту
+            Console.WriteLine("\n7. ТЕСТИРОВАНИЕ ВЫБОРОК ПО ВОЗРАСТУ:");
+            var olderThan20 = group2.GetStudentsOlderThan(20);
+            Console.WriteLine($"Студентов старше 20 лет: {olderThan20.Count}");
+            
+            var youngerThan22 = group2.GetStudentsYoungerThan(22);
+            Console.WriteLine($"Студентов младше 22 лет: {youngerThan22.Count}");
+            
+            // Тестирование клонирования
+            Console.WriteLine("\n8. ТЕСТИРОВАНИЕ КЛОНИРОВАНИЯ:");
+            StudentGroup clonedGroup = group2.Clone();
+            Console.WriteLine($"Оригинальная группа: {group2.GroupName}, студентов: {group2.Count}");
+            Console.WriteLine($"Клонированная группа: {clonedGroup.GroupName}, студентов: {clonedGroup.Count}");
+            
+            // Тестирование перечисления (foreach)
+            Console.WriteLine("\n9. ТЕСТИРОВАНИЕ ПЕРЕЧИСЛЕНИЯ (foreach):");
+            int counter = 1;
+            foreach (var student in group2) {
+                Console.WriteLine($"{counter++}. {student}");
+            }
+            
+            // Тестирование исключений
+            Console.WriteLine("\n10. ТЕСТИРОВАНИЕ ИСКЛЮЧЕНИЙ:");
+            TestException("Добавление null-студента", () => group2.AddStudent(null));
+            TestException("Добавление студента с дублирующимся номером", () => group2.AddStudent(student1));
+            TestException("Доступ по отрицательному индексу", () => { var s = group2[-1]; });
+            TestException("Доступ по индексу больше размера", () => { var s = group2[100]; });
+            TestException("Создание студента с пустой фамилией", () => new Student("", "Иван", DateTime.Now, "111111"));
+            TestException("Создание студента с будущей датой рождения", () => new Student("Тест", "Тест", DateTime.Now.AddDays(1), "111111"));
+            TestException("Создание студента с некорректным номером зачетки", () => new Student("Тест", "Тест", DateTime.Now, "123"));
+            
+            // Вывод полной информации о группе
+            Console.WriteLine("\n11. ПОЛНАЯ ИНФОРМАЦИЯ О ГРУППЕ:");
+            Console.WriteLine(group2);
+            
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"\nОшибка: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+    
+    static void TestException(string testName, Action testAction) {
+        try {
+            testAction();
+            Console.WriteLine($"{testName}: ОШИБКА - исключение не было выброшено!");
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"{testName}: ✓ {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+}
