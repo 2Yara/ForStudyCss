@@ -1,0 +1,62 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+class Program {
+    static void Main() {
+        Console.Write("Введите путь к файлу: ");
+        string filePath = Console.ReadLine();
+        
+        try {
+            string text = File.ReadAllText(filePath);
+            
+            List<string> sentences = SplitIntoSentences(text);
+            
+            List<string> questions = new List<string>();
+            List<string> exclamations = new List<string>();
+            List<string> others = new List<string>();
+            
+            foreach (string sentence in sentences) {
+                string trimmed = sentence.Trim();
+                if (trimmed.EndsWith("?")) {
+                    questions.Add(trimmed);
+                }
+                else if (trimmed.EndsWith("!")) {
+                    exclamations.Add(trimmed);
+                }
+                else if (trimmed.Length > 0) {
+                    others.Add(trimmed);
+                }
+            }
+            
+            Console.WriteLine("Предложения с вопросительными знаками:");
+            foreach (string q in questions) {
+                Console.WriteLine($"  {q}");
+            }
+            Console.WriteLine("\nПредложения с восклицательными знаками:");
+            foreach (string e in exclamations) {
+                Console.WriteLine($"  {e}");
+            }
+            Console.WriteLine("\nОстальные предложения:");
+            foreach (string o in others) {
+                Console.WriteLine($"  {o}");
+            }
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+    
+    static List<string> SplitIntoSentences(string text) {
+        List<string> sentences = new List<string>();
+        string pattern = @"([^.!?]+[.!?]+)"; // ищет предложения, внутри которых есть искомые знаки, чередующиеся(игнорирует их) после не-искомых. И делит.
+        
+        MatchCollection matches = Regex.Matches(text, pattern);
+        foreach (Match match in matches) {
+            sentences.Add(match.Value);
+        }
+        
+        return sentences;
+    }
+}
