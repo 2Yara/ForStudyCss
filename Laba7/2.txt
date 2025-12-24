@@ -1,0 +1,46 @@
+using System;
+using System.IO;
+using System.Text.RegularExpressions;
+
+class Program {
+    static void Main() {
+        Console.Write("Введите путь к файлу: ");
+        string filePath = Console.ReadLine();
+        
+        try {
+            string text = File.ReadAllText(filePath);
+            string result = ReverseWordsInText(text);
+            
+            Console.WriteLine("Исходный текст:\n");
+            Console.WriteLine(text);
+            
+            Console.WriteLine("\nТекст с перевернутыми словами: \n");
+            Console.WriteLine(result);
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+    
+    static string ReverseWordsInText(string text) {
+        string pattern = @"\b[\p{L}'-]+\b"; // выражение для поиска слов
+        
+        return Regex.Replace(text, pattern, match => {
+            string word = match.Value;
+            return ReverseWord(word);
+        });
+    }
+    
+    static string ReverseWord(string word) {
+        char[] chars = word.ToCharArray();
+        Array.Reverse(chars);
+        
+        if (char.IsUpper(word[0])) {
+            chars[0] = char.ToUpper(chars[0]);
+            for (int i = 1; i < chars.Length; i++) {
+                chars[i] = char.ToLower(chars[i]);
+            }
+        }        
+        return new string(chars);
+    }
+}
