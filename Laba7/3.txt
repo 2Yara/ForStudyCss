@@ -1,0 +1,35 @@
+using System;
+using System.IO;
+using System.Text.RegularExpressions;
+
+class Program {
+    static void Main() {
+        Console.Write("Введите путь к файлу: ");
+        string filePath = Console.ReadLine();
+        
+        try {
+            string[] lines = File.ReadAllLines(filePath);
+            
+            Console.WriteLine("\nСтроки без 3хзначных чисел:\n");
+            bool found = true;
+            for (int i = 0; i < lines.Length; i++) {
+                if (!ContainsThreeDigitNumber(lines[i])) {
+                    Console.WriteLine($"{i + 1}: {lines[i]}");
+                    found = false;
+                }
+            }
+            
+            if (found) {
+                Console.WriteLine("Все строки содержат трехзначные числа.");
+            }
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+    
+    static bool ContainsThreeDigitNumber(string line) {
+        string pattern = @"\b\d{3}\b"; // Регулярное выражение для поиска трехзначных чисел \b - граница слова, \d{3} - три цифры
+        return Regex.IsMatch(line, pattern);
+    }
+}
