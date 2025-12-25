@@ -128,6 +128,9 @@ public class Date {
         
         SetDate(newDate.Year, newDate.Month, newDate.Day);
     }
+    public override string ToString() {
+        return $"{_day:00}.{_month:00}.{_year:0000}";
+    }
 
     // Статический метод для проверки корректности даты
     public static bool IsValidDate(int year, int month, int day) {
